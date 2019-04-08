@@ -5,7 +5,7 @@ A simple argument parser for command line programs.
 ## Usage:
 
 ```cpp
-ArgParse args();
+ArgParse args;
 args.addArg("-c", "--compile", [](){
 		std::cout << "-c flag called!" << std::endl;
 });
