@@ -28,6 +28,7 @@ public:
     Argument() { }
 
     string &getOpt() { return opt; }
+    string &getOptlong() { return optlong; }
     void operator()(void) { callback(); }
     ArgumentType getArgumentType() { return type; }
 };

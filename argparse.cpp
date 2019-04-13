@@ -24,10 +24,19 @@ map<string, vector<string>> ArgParse::parseArgv(char *argv[]) {
     string prev = positionals;
     vector<string>::iterator it = parsedParams.begin();
 
+#if 0
+    cout << "Inspecting {";
+    for(auto a : parsedParams) {
+        cout << a << ", ";
+    }
+    cout << "}" << endl;
+#endif
+
     while(it != parsedParams.end()) {
 
         if(it->compare("--") == 0) {
             endOptions = true;
+            ++ it;
             continue;
         }
 
@@ -36,11 +45,11 @@ map<string, vector<string>> ArgParse::parseArgv(char *argv[]) {
             string tmp = *it;
             it ++;
 
-            switch(args[*it].getArgumentType()) {
+            switch(args[tmp].getArgumentType()) {
                 case Argument::TYPE_OPTION:
-                    for(; it != parsedParams.end() && (*it)[0] != '-'; ++ it)
+                    for(; it != parsedParams.end() && !endOptions && (*it)[0] != '-'; ++ it)
                         argumentMap[tmp].push_back(*it);
-                    break;
+                    continue;
                 case Argument::TYPE_POSITIONAL:
                 case Argument::TYPE_FLAG:
                 default: ;
@@ -53,7 +62,6 @@ map<string, vector<string>> ArgParse::parseArgv(char *argv[]) {
         if(it == parsedParams.end()) break;
         it ++;
     }
-
 
     return argumentMap;
 }
@@ -83,9 +91,20 @@ void ArgParse::parse(char *argv[]) {
 #endif
 
     for(auto f : args) {
-        if(actualParameters.find(f.first) != actualParameters.end()) {
+        auto opt = f.first;
+        auto arg = f.second;
+
+        if(actualParameters.find(arg.getOpt()) != actualParameters.end()
+            || actualParameters.find(arg.getOptlong()) != actualParameters.end()) {
+
+            // cout << "Found (" << arg.getOpt() << ")[" << arg.getOptlong() << "]" << endl;
             f.second();
         }
+#if 0
+        else {
+            cout << "didn't locate for (" << opt << ")" << endl;
+        }
+#endif
     }
 }
 
@@ -97,4 +116,3 @@ string ArgParse::getFlags() {
     }
     return options;
 }
-
