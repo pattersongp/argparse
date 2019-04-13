@@ -2,68 +2,99 @@
 
 #include "argparse.h"
 
-static std::vector<std::string> getArgs(char *argv[]) {
-    std::vector<std::string> actuals;
+using namespace std;
+
+static vector<string> getArgs(char *argv[]) {
+    vector<string> actuals;
     char **tmp = argv+1;
 
     while(*tmp) {
-        actuals.push_back(std::string(*tmp));
+        actuals.push_back(string(*tmp));
         ++ tmp;
     }
-    return std::move(actuals);
+    return move(actuals);
 }
 
-std::map<std::string, std::vector<std::string>> ArgParse::parseArgv(char *argv[]) {
-    std::map<std::string, std::vector<std::string>> argumentMap;
+map<string, vector<string>> ArgParse::parseArgv(char *argv[]) {
 
-    auto actuals = getArgs(argv);
-    std::string prev = "_imp";
-    for(auto v : actuals) {
-        if(v[0] == '-') {
-            argumentMap[v] = std::vector<std::string> ();
-            prev = v;
+    map<string, vector<string>> argumentMap;
+    bool endOptions(false);
+    auto parsedParams = getArgs(argv);
+    string positionals = "positionals";
+    string prev = positionals;
+    vector<string>::iterator it = parsedParams.begin();
+
+    while(it != parsedParams.end()) {
+
+        if(it->compare("--") == 0) {
+            endOptions = true;
+            continue;
+        }
+
+        if(!endOptions && (*it)[0] == '-') {
+            argumentMap[*it] = vector<string> ();
+            string tmp = *it;
+            it ++;
+
+            switch(args[*it].getArgumentType()) {
+                case Argument::TYPE_OPTION:
+                    for(; it != parsedParams.end() && (*it)[0] != '-'; ++ it)
+                        argumentMap[tmp].push_back(*it);
+                    break;
+                case Argument::TYPE_POSITIONAL:
+                case Argument::TYPE_FLAG:
+                default: ;
+            }
         }
         else {
-            argumentMap[prev].push_back(v);
+            argumentMap[positionals].push_back(*it);
         }
+
+        if(it == parsedParams.end()) break;
+        it ++;
     }
+
 
     return argumentMap;
 }
 
-ArgParse::ArgParse(std::string progName) {
+ArgParse::ArgParse(string progName) {
     name = progName;
-    addArg("-h", "--help", [&](){ std::cout << "usage: " << progName
-            << " [" << getFlags() << "]" << std::endl;
+    addArg(Argument::ArgumentType::TYPE_FLAG, "-h", "--help",
+        [&](){ cout << "usage: " << progName
+            << " [" << getFlags() << "]" << endl;
     });
 }
 
-void ArgParse::addArg(std::string opt, std::string optlong,
-    Argument::Function f) {
+void ArgParse::addArg(Argument::ArgumentType type, string opt,
+        string optlong, Argument::Function f) {
 
-    args.push_back(Argument(opt, optlong, f));
-}
-
-void ArgParse::addAction(Argument::Function f) {
-    args.push_back(Argument("", "", f));
+    args[opt] = Argument(type, opt, optlong, f);
 }
 
 void ArgParse::parse(char *argv[]) {
-    actuals = parseArgv(argv);
+    actualParameters = parseArgv(argv);
+
+#if 0
+    cout << "Parsed:" << endl;
+    for(auto kv : actualParameters) {
+        cout << "[" << kv.first << "]" "(" << kv.second.size() << ")"  << endl;
+    }
+#endif
+
     for(auto f : args) {
-        if(actuals.find(f.getOpt()) != actuals.end()) {
-            f();
-        }
-        else if(f.getOpt() == "") {
-            f();
+        if(actualParameters.find(f.first) != actualParameters.end()) {
+            f.second();
         }
     }
 }
 
-std::string ArgParse::getFlags() {
-    std::string options;
+string ArgParse::getFlags() {
+    string options;
     for(auto a : args) {
-        options += a.getOpt().substr(1);
+        if(a.first == "positionals") continue;
+        options += a.second.getOpt().substr(1);
     }
     return options;
 }
+

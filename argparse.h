@@ -3,35 +3,49 @@
 #include <map>
 #include <vector>
 
+using namespace std;
+
 class Argument {
 public:
-    typedef std::function<void (void)> Function;
+    typedef function<void (void)> Function;
+	enum ArgumentType {
+        TYPE_OPTION,
+        TYPE_FLAG,
+        TYPE_POSITIONAL,
+	};
+
 private:
-    std::string opt;
-    std::string optlong;
+    ArgumentType type;
+    string opt;
+    string optlong;
     Function callback;
 public:
-    Argument(std::string opt, std::string optlong, Function callback)
-        : opt(opt), optlong(optlong), callback(callback) { }
+    Argument(ArgumentType type, string opt, string optlong, Function callback)
+        : type(type), opt(opt), optlong(optlong), callback(callback) { }
+    Argument(const Argument &rhs)
+        : type(rhs.type), opt(rhs.opt), optlong(rhs.optlong),
+        callback(rhs.callback) { }
+    Argument() { }
 
-    std::string &getOpt() { return opt; }
+    string &getOpt() { return opt; }
     void operator()(void) { callback(); }
+    ArgumentType getArgumentType() { return type; }
 };
 
 class ArgParse {
 private:
-    std::vector<Argument> args;
-    std::string name;
-    std::map<std::string, std::vector<std::string>> actuals;
+    map<string, Argument> args;
+    string name;
+    map<string, vector<string>> actualParameters;
 
-    std::map<std::string, std::vector<std::string>> parseArgv(char *argv[]);
+    map<string, vector<string>> parseArgv(char *argv[]);
 public:
-    ArgParse(std::string progName = "");
+    ArgParse(string progName = "");
 
-    void addArg(std::string opt, std::string optlong, Argument::Function f);
-    void addAction(Argument::Function f);
+    void addArg(Argument::ArgumentType type, string opt, string optlong,
+            Argument::Function f);
 
     void parse(char *argv[]);
-    std::string getFlags();
-    std::vector<std::string> getActuals(std::string key) { return actuals[key]; }
+    string getFlags();
+    vector<string> getActuals(string key) { return actualParameters[key]; }
 };
