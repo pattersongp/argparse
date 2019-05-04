@@ -7,9 +7,31 @@ using namespace std;
 static vector<string> getArgs(char *argv[]) {
     vector<string> actuals;
     char **tmp = argv+1;
+    bool endOptions = false;
 
     while(*tmp) {
-        actuals.push_back(string(*tmp));
+
+        if(strcmp(*tmp, "--") == 0) {
+            actuals.push_back(string(*tmp));
+            endOptions = true;
+            ++ tmp;
+            continue;
+        }
+
+        // check if multiple flags passed as one eg -lfia
+        if(!endOptions && **tmp == '-'
+            && strlen(*tmp) > 2 && (*tmp)[1] != '-') {
+
+            string multi = *tmp+1;            
+            for(auto &c : multi) {
+                string arg = "-";
+                arg += c;
+                actuals.push_back(arg);
+            }
+        }
+        else {
+            actuals.push_back(string(*tmp));
+        }
         ++ tmp;
     }
     return move(actuals);
@@ -22,6 +44,7 @@ map<string, vector<string>> ArgParse::parseArgv(char *argv[]) {
     auto parsedParams = getArgs(argv);
     string positionals = "positionals";
     string prev = positionals;
+    string target = "";
     vector<string>::iterator it = parsedParams.begin();
 
 #if 0
@@ -34,33 +57,41 @@ map<string, vector<string>> ArgParse::parseArgv(char *argv[]) {
 
     while(it != parsedParams.end()) {
 
+        // XXX need to check if an illegal argument
+
+        // if only parsing positionals from now on
         if(it->compare("--") == 0) {
             endOptions = true;
             ++ it;
             continue;
         }
 
+        // if optlong then convert to short
+        if((*it).find("--") != (*it).npos) {
+           *it = longToShort[*it];
+        }
+
         if(!endOptions && (*it)[0] == '-') {
             argumentMap[*it] = vector<string> ();
             string tmp = *it;
-            it ++;
-
+            // cout << "Argument " << tmp << " has type " << args[tmp].getArgumentType() << endl;
             switch(args[tmp].getArgumentType()) {
                 case Argument::TYPE_OPTION:
+                    it ++;
                     for(; it != parsedParams.end() && !endOptions && (*it)[0] != '-'; ++ it)
                         argumentMap[tmp].push_back(*it);
-                    continue;
+                    break;
                 case Argument::TYPE_POSITIONAL:
                 case Argument::TYPE_FLAG:
-                default: ;
+                default: it ++;
             }
         }
         else {
             argumentMap[positionals].push_back(*it);
+            it ++;
         }
 
         if(it == parsedParams.end()) break;
-        it ++;
     }
 
     return argumentMap;
@@ -70,14 +101,15 @@ ArgParse::ArgParse(string progName) {
     name = progName;
     addArg(Argument::ArgumentType::TYPE_FLAG, "-h", "--help",
         [&](){ cout << "usage: " << progName
-            << " [" << getFlags() << "]" << endl;
+            << "[" << getFlags() << "]" << endl;
     });
 }
 
 void ArgParse::addArg(Argument::ArgumentType type, string opt,
-        string optlong, Argument::Function f) {
+        string optlong, Argument::Function f, string desc) {
 
-    args[opt] = Argument(type, opt, optlong, f);
+    longToShort[optlong] = opt;
+    args[opt] = Argument(type, opt, optlong, f, desc);
 }
 
 void ArgParse::parse(char *argv[]) {
@@ -100,11 +132,6 @@ void ArgParse::parse(char *argv[]) {
             // cout << "Found (" << arg.getOpt() << ")[" << arg.getOptlong() << "]" << endl;
             f.second();
         }
-#if 0
-        else {
-            cout << "didn't locate for (" << opt << ")" << endl;
-        }
-#endif
     }
 }
 

@@ -19,16 +19,19 @@ private:
     string opt;
     string optlong;
     Function callback;
+    string desc;
 public:
-    Argument(ArgumentType type, string opt, string optlong, Function callback)
+    Argument(ArgumentType type, string opt, string optlong,
+        Function callback, string desc = "")
         : type(type), opt(opt), optlong(optlong), callback(callback) { }
     Argument(const Argument &rhs)
         : type(rhs.type), opt(rhs.opt), optlong(rhs.optlong),
         callback(rhs.callback) { }
     Argument() { }
 
-    string &getOpt() { return opt; }
-    string &getOptlong() { return optlong; }
+    const string &getOpt() const { return opt; }
+    const string &getOptlong() const { return optlong; }
+    const string &getDescription() const { return desc; }
     void operator()(void) { callback(); }
     ArgumentType getArgumentType() { return type; }
 };
@@ -36,6 +39,7 @@ public:
 class ArgParse {
 private:
     map<string, Argument> args;
+    map<string, string> longToShort;
     string name;
     map<string, vector<string>> actualParameters;
 
@@ -44,7 +48,7 @@ public:
     ArgParse(string progName = "");
 
     void addArg(Argument::ArgumentType type, string opt, string optlong,
-            Argument::Function f);
+            Argument::Function f, string desc = "");
 
     void parse(char *argv[]);
     string getFlags();

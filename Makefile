@@ -16,8 +16,8 @@ all: clean $(TARGET) $(TEST)
 .PHONY: test
 test: $(TEST)
 
-$(TEST): $(TARGET)
-	$(CXX) $(CXX_FLAGS) $(TEST_SRC) $(SOURCE) -o $(TEST)
+$(TEST): $(TEST_SRC) $(TARGET)
+	$(CXX) $(CXX_FLAGS) $(TEST_SRC) $(TARGET) -o $(TEST)
 
 .PHONY: clean
 clean:
