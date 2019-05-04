@@ -34,6 +34,9 @@ public:
     const string &getDescription() const { return desc; }
     void operator()(void) { callback(); }
     ArgumentType getArgumentType() { return type; }
+    bool hasDescription() const { return desc != ""; }
+
+    friend ostream &operator<<(ostream &stream, const Argument &arg);
 };
 
 class ArgParse {

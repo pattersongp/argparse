@@ -37,8 +37,15 @@ static vector<string> getArgs(char *argv[]) {
     return move(actuals);
 }
 
-map<string, vector<string>> ArgParse::parseArgv(char *argv[]) {
+ostream &operator<<(ostream &stream, const Argument &arg) {
+    stream << '\t' << arg.getOpt() << ", " << arg.getOptlong();
+    if(arg.hasDescription())
+        stream << "\n\t\t" << arg.getDescription();
+    return stream;
+}
 
+// TODO need to check if an illegal argument
+map<string, vector<string>> ArgParse::parseArgv(char *argv[]) {
     map<string, vector<string>> argumentMap;
     bool endOptions(false);
     auto parsedParams = getArgs(argv);
@@ -47,18 +54,7 @@ map<string, vector<string>> ArgParse::parseArgv(char *argv[]) {
     string target = "";
     vector<string>::iterator it = parsedParams.begin();
 
-#if 0
-    cout << "Inspecting {";
-    for(auto a : parsedParams) {
-        cout << a << ", ";
-    }
-    cout << "}" << endl;
-#endif
-
     while(it != parsedParams.end()) {
-
-        // XXX need to check if an illegal argument
-
         // if only parsing positionals from now on
         if(it->compare("--") == 0) {
             endOptions = true;
@@ -74,7 +70,6 @@ map<string, vector<string>> ArgParse::parseArgv(char *argv[]) {
         if(!endOptions && (*it)[0] == '-') {
             argumentMap[*it] = vector<string> ();
             string tmp = *it;
-            // cout << "Argument " << tmp << " has type " << args[tmp].getArgumentType() << endl;
             switch(args[tmp].getArgumentType()) {
                 case Argument::TYPE_OPTION:
                     it ++;
@@ -104,11 +99,11 @@ ArgParse::ArgParse(string name, string desc) {
         [&](){
             cout << progDesc << '\n' << "usage: " << progName << " "
                 << "[" << getFlags() << "]" << '\n';
-        for(auto &arg : args) {
-            if(arg.first == "positionals") continue;
-            cout << '\t' << arg.first << '\t'
-                << arg.second.getDescription() << '\n';
-        }
+
+            for(auto &pair : args) {
+                if(pair.first == "positionals") continue;
+                cout << args[pair.first] << '\n';
+            }
     });
 }
 
@@ -122,21 +117,12 @@ void ArgParse::addArg(Argument::ArgumentType type, string opt,
 void ArgParse::parse(char *argv[]) {
     actualParameters = parseArgv(argv);
 
-#if 0
-    cout << "Parsed:" << endl;
-    for(auto kv : actualParameters) {
-        cout << "[" << kv.first << "]" "(" << kv.second.size() << ")"  << endl;
-    }
-#endif
-
     for(auto f : args) {
         auto opt = f.first;
         auto arg = f.second;
-
         if(actualParameters.find(arg.getOpt()) != actualParameters.end()
             || actualParameters.find(arg.getOptlong()) != actualParameters.end()) {
 
-            // cout << "Found (" << arg.getOpt() << ")[" << arg.getOptlong() << "]" << endl;
             f.second();
         }
     }
