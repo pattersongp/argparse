@@ -20,13 +20,15 @@ private:
     string optlong;
     Function callback;
     string desc;
+    bool hasRun;
 public:
     Argument(ArgumentType type, string opt, string optlong,
         Function callback, string desc = "")
-        : type(type), opt(opt), optlong(optlong), callback(callback) , desc(desc) { }
+        : type(type), opt(opt), optlong(optlong), callback(callback),
+        desc(desc), hasRun(false) { }
     Argument(const Argument &rhs)
         : type(rhs.type), opt(rhs.opt), optlong(rhs.optlong),
-        callback(rhs.callback), desc(rhs.desc) { }
+        callback(rhs.callback), desc(rhs.desc), hasRun(rhs.hasRun) { }
     Argument() { }
 
     const string &getOpt() const { return opt; }
@@ -35,6 +37,8 @@ public:
     void operator()(void) { callback(); }
     ArgumentType getArgumentType() { return type; }
     bool hasDescription() const { return desc != ""; }
+    void setHasRun() { hasRun = true; }
+    bool getHasRun() { return hasRun; }
 
     friend ostream &operator<<(ostream &stream, const Argument &arg);
 };
@@ -55,6 +59,8 @@ public:
             Argument::Function f, string desc = "");
 
     void parse(char *argv[]);
+    void runAll();
+    void run(string arg);
     string getFlags();
     vector<string> getActuals(string key) { return actualParameters[key]; }
 };

@@ -116,16 +116,28 @@ void ArgParse::addArg(Argument::ArgumentType type, string opt,
 
 void ArgParse::parse(char *argv[]) {
     actualParameters = parseArgv(argv);
+}
 
+void ArgParse::runAll() {
     for(auto f : args) {
         auto opt = f.first;
         auto arg = f.second;
+        if(f.second.getHasRun()) continue;
         if(actualParameters.find(arg.getOpt()) != actualParameters.end()
             || actualParameters.find(arg.getOptlong()) != actualParameters.end()) {
 
             f.second();
+            arg.setHasRun();
         }
     }
+
+}
+
+// TODO templatize this for specific actions
+void ArgParse::run(string toRun) {
+        auto arg = args[toRun];
+        arg.setHasRun();
+        arg();
 }
 
 string ArgParse::getFlags() {
