@@ -97,11 +97,18 @@ map<string, vector<string>> ArgParse::parseArgv(char *argv[]) {
     return argumentMap;
 }
 
-ArgParse::ArgParse(string progName) {
-    name = progName;
+ArgParse::ArgParse(string name, string desc) {
+    progDesc = desc;
+    progName = name;
     addArg(Argument::ArgumentType::TYPE_FLAG, "-h", "--help",
-        [&](){ cout << "usage: " << progName
-            << "[" << getFlags() << "]" << endl;
+        [&](){
+            cout << progDesc << '\n' << "usage: " << progName << " "
+                << "[" << getFlags() << "]" << '\n';
+        for(auto &arg : args) {
+            if(arg.first == "positionals") continue;
+            cout << '\t' << arg.first << '\t'
+                << arg.second.getDescription() << '\n';
+        }
     });
 }
 
